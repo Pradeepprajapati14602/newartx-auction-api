@@ -1,0 +1,32 @@
+services:
+  rethinkdb:
+    image: rethinkdb:2.4
+    restart: unless-stopped
+    ports:
+      - "28015:28015"
+      - "8080:8080"
+    volumes:
+      - rethinkdb_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "rethinkdb --version || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - RETHINKDB_HOST=rethinkdb
+      - RETHINKDB_PORT=28015
+      - RETHINKDB_DB=${RETHINKDB_DB:-auction}
+    depends_on:
+      rethinkdb:
+        condition: service_started
+
+volumes:
+  rethinkdb_data:
